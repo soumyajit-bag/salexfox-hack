@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Scalefox Hack Admin</title>
+<style>
+:root{--ink:#0b0b0e;--ink-2:#121217;--ink-3:#1b1b22;--line:#2a2a33;--paper:#f6f4f2;--mute:#9d9ca8;--red:#ee1623;--red-soft:#ff4b55;--ok:#3ecf8e;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--paper);font:15px/1.5 "Segoe UI",system-ui,Arial,sans-serif;padding:24px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1280px;margin:0 auto}
+h1{font:900 28px/1 Arial Black,Impact,sans-serif;text-transform:uppercase;margin:0 0 4px}
+h1 span{color:var(--red)}
+.mute{color:var(--mute)}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:20px 0}
+input,select,button{font:inherit;color:var(--paper);background:var(--ink-2);border:1.5px solid var(--line);padding:10px 12px;border-radius:0;min-width:0}
+input:focus,select:focus{outline:none;border-color:var(--red-soft)}
+button{cursor:pointer;background:var(--red);border-color:var(--red);font-weight:700}
+button.ghost{background:transparent;border-color:var(--line)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+.card{background:var(--ink-2);border:1px solid var(--line);padding:16px}
+.card b{display:block;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.card span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.scroll{overflow-x:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:980px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);background:var(--ink-2);position:sticky;top:0}
+.pill{display:inline-block;padding:2px 8px;font-size:12px;font-weight:700;border:1px solid var(--line)}
+.pill.paid{color:var(--ok);border-color:var(--ok)}
+.pill.pending{color:var(--mute)}
+#msg{color:#ff8f96;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Scalefox Hack <span>Admin</span></h1>
+  <p class="mute">Registrations and payments</p>
+
+  <form class="bar" id="login">
+    <input id="token" type="password" placeholder="Admin token" autocomplete="current-password" style="min-width:260px">
+    <button type="submit">Open</button>
+  </form>
+  <div id="msg" role="status"></div>
+
+  <div id="panel" hidden>
+    <div class="cards" id="cards"></div>
+    <div class="bar">
+      <input id="search" type="search" placeholder="Search name, email, college, code" style="min-width:280px">
+      <select id="fstatus"><option value="paid">Paid only</option><option value="all">All, including unpaid</option></select>
+      <select id="fplan"><option value="">Team and solo</option><option value="team">Team</option><option value="solo">Solo</option></select>
+      <select id="ftrack"><option value="">All tracks</option><option>AI &amp; Automation</option><option>Product &amp; Apps</option><option>Growth &amp; Media Tech</option></select>
+      <button class="ghost" id="refresh" type="button">Refresh</button>
+      <button id="csv" type="button">Download CSV</button>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Code</th><th>Status</th><th>Plan</th><th>Track</th><th>Team / Leader</th><th>Contact</th><th>College</th><th>Members</th><th>Paid</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var token="",data=null;
+  var $=function(id){return document.getElementById(id)};
+  try{token=sessionStorage.getItem("sfx_admin")||""}catch(e){}
+  function api(path){return fetch(path,{headers:{Authorization:"Bearer "+token}})}
+  function cell(text){var td=document.createElement("td");td.textContent=text==null?"":text;return td}
+  function load(){
+    $("msg").textContent="";
+    api("/api/admin/registrations").then(function(r){
+      if(r.status===401)throw new Error("Wrong token.");
+      if(!r.ok)throw new Error("Could not load registrations.");
+      return r.json();
+    }).then(function(j){
+      data=j;try{sessionStorage.setItem("sfx_admin",token)}catch(e){}
+      $("login").hidden=true;$("panel").hidden=false;draw();
+    }).catch(function(e){$("msg").textContent=e.message;$("panel").hidden=true;$("login").hidden=false});
+  }
+  function draw(){
+    var s=data.summary,cards=$("cards");cards.textContent="";
+    [["Paid",s.paid],["Pending",s.pending],["Teams",s.team],["Solo",s.solo],["Revenue","₹"+s.revenue.toLocaleString("en-IN")]].forEach(function(c){
+      var d=document.createElement("div");d.className="card";
+      var b=document.createElement("b");b.textContent=c[1];
+      var sp=document.createElement("span");sp.textContent=c[0];
+      d.appendChild(b);d.appendChild(sp);cards.appendChild(d);
+    });
+    var q=$("search").value.toLowerCase(),fs=$("fstatus").value,fp=$("fplan").value,ft=$("ftrack").value;
+    var tb=$("rows");tb.textContent="";
+    data.rows.filter(function(r){
+      if(fs==="paid"&&r.status!=="paid")return false;
+      if(fp&&r.plan!==fp)return false;
+      if(ft&&r.track!==ft)return false;
+      if(!q)return true;
+      return [r.code,r.teamName,r.leaderName,r.email,r.phone,r.college].join(" ").toLowerCase().indexOf(q)>-1;
+    }).forEach(function(r){
+      var tr=document.createElement("tr");
+      tr.appendChild(cell(r.code||"-"));
+      var st=document.createElement("td"),p=document.createElement("span");p.className="pill "+r.status;p.textContent=r.status;st.appendChild(p);tr.appendChild(st);
+      tr.appendChild(cell(r.plan));tr.appendChild(cell(r.track));
+      tr.appendChild(cell((r.teamName?r.teamName+" / ":"")+r.leaderName));
+      tr.appendChild(cell(r.email+" · "+r.phone));
+      tr.appendChild(cell(r.college));
+      tr.appendChild(cell(r.members.join(", ")));
+      tr.appendChild(cell(r.paidAt||""));
+      tb.appendChild(tr);
+    });
+  }
+  $("login").addEventListener("submit",function(e){e.preventDefault();token=$("token").value.trim();load()});
+  ["search","fstatus","fplan","ftrack"].forEach(function(id){$(id).addEventListener("input",function(){if(data)draw()})});
+  $("refresh").addEventListener("click",load);
+  $("csv").addEventListener("click",function(){
+    var all=$("fstatus").value==="all";
+    api("/api/admin/export.csv"+(all?"?paid=0":"")).then(function(r){return r.blob()}).then(function(b){
+      var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="scalefox-hack-registrations.csv";
+      document.body.appendChild(a);a.click();a.remove();
+    });
+  });
+  if(token)load();
+})();
+</script>
+</body>
+</html>
