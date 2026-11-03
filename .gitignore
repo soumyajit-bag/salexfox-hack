@@ -16,3 +16,6 @@ data/
 *.log
 .DS_Store
 Thumbs.db
+.neon
+.vercel
+.env*

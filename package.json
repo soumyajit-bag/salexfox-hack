@@ -4,16 +4,21 @@
   "description": "Registration and Razorpay payment backend for Scalefox Hack'26",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "better-sqlite3": "^11.3.0",
+    "@neon/config": "^1.10.0",
+    "@neon/env": "^1.6.8",
+    "@vercel/functions": "^2.2.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
+    "pg": "^8.16.3",
     "razorpay": "^2.9.4"
   }
 }

@@ -1,0 +1,11 @@
+.git
+.vercel
+.agents
+.env
+.env.*
+.neon
+data/
+*.db
+*.db-shm
+*.db-wal
+node_modules/

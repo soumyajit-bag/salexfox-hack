@@ -23,13 +23,37 @@ button.ghost{background:transparent;border-color:var(--line)}
 .card b{display:block;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
 .card span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
 .scroll{overflow-x:auto;border:1px solid var(--line)}
-table{border-collapse:collapse;width:100%;min-width:980px}
+table{border-collapse:collapse;width:100%;min-width:1180px}
 th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);background:var(--ink-2);position:sticky;top:0}
 .pill{display:inline-block;padding:2px 8px;font-size:12px;font-weight:700;border:1px solid var(--line)}
 .pill.paid{color:var(--ok);border-color:var(--ok)}
 .pill.pending{color:var(--mute)}
+.pill.failed{color:var(--red-soft);border-color:var(--red-soft)}
+.pill.refunded{color:#c3a6ff;border-color:#c3a6ff}
+#details{margin-top:16px;padding:16px;background:var(--ink-2);border:1px solid var(--line)}
+#details h2{margin-top:0;font-size:18px}
+#details dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px 18px}
+#details dt{color:var(--mute);font-size:12px;text-transform:uppercase}
+#details dd{margin:0;overflow-wrap:anywhere}
 #msg{color:#ff8f96;margin:12px 0}
+@media(prefers-reduced-motion:no-preference){
+  .wrap>h1,.wrap>p,.bar,#msg{animation:admin-enter .55s cubic-bezier(.22,.68,0,1.02) both}
+  .wrap>p{animation-delay:70ms}
+  .bar{animation-delay:120ms}
+  #panel:not([hidden]){animation:admin-enter .5s cubic-bezier(.22,.68,0,1.02) both}
+}
+.card,button,input,select,#details{transition:transform .2s ease,border-color .2s ease,background-color .2s ease,box-shadow .2s ease}
+.card:hover{transform:translateY(-3px);border-color:rgba(255,75,85,.55);box-shadow:0 12px 28px rgba(0,0,0,.2)}
+button:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(238,22,35,.18)}
+button:active{transform:translateY(0) scale(.98)}
+input:focus,select:focus{box-shadow:0 0 0 3px rgba(238,22,35,.12)}
+tr:hover td{background:rgba(255,255,255,.025)}
+@keyframes admin-enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  .card:hover,button:hover,button:active{transform:none}
+}
 </style>
 </head>
 <body>
@@ -47,7 +71,7 @@ th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute
     <div class="cards" id="cards"></div>
     <div class="bar">
       <input id="search" type="search" placeholder="Search name, email, college, code" style="min-width:280px">
-      <select id="fstatus"><option value="paid">Paid only</option><option value="all">All, including unpaid</option></select>
+      <select id="fstatus"><option value="all">All registrations</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="failed">Failed</option><option value="refunded">Refunded</option></select>
       <select id="fplan"><option value="">Team and solo</option><option value="team">Team</option><option value="solo">Solo</option></select>
       <select id="ftrack"><option value="">All tracks</option><option>AI &amp; Automation</option><option>Product &amp; Apps</option><option>Growth &amp; Media Tech</option></select>
       <button class="ghost" id="refresh" type="button">Refresh</button>
@@ -55,10 +79,11 @@ th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute
     </div>
     <div class="scroll">
       <table>
-        <thead><tr><th>Code</th><th>Status</th><th>Plan</th><th>Track</th><th>Team / Leader</th><th>Contact</th><th>College</th><th>Members</th><th>Paid</th></tr></thead>
+        <thead><tr><th>Registration ID</th><th>Type</th><th>Participant / Team</th><th>Email</th><th>Phone</th><th>Registered</th><th>Amount</th><th>Payment status</th><th>Razorpay payment ID</th><th>Details</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
+    <div id="details" hidden></div>
   </div>
 </div>
 <script>
@@ -66,8 +91,14 @@ th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute
   var token="",data=null;
   var $=function(id){return document.getElementById(id)};
   try{token=sessionStorage.getItem("sfx_admin")||""}catch(e){}
-  function api(path){return fetch(path,{headers:{Authorization:"Bearer "+token}})}
+  function api(path,options){
+    options=options||{};
+    options.headers=Object.assign({},options.headers||{},{Authorization:"Bearer "+token});
+    return fetch(path,options);
+  }
   function cell(text){var td=document.createElement("td");td.textContent=text==null?"":text;return td}
+  function text(parent,tag,value){var node=document.createElement(tag);node.textContent=value==null?"":String(value);parent.appendChild(node);return node}
+  function money(paise){return "₹"+(Number(paise||0)/100).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}
   function load(){
     $("msg").textContent="";
     api("/api/admin/registrations").then(function(r){
@@ -76,12 +107,12 @@ th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute
       return r.json();
     }).then(function(j){
       data=j;try{sessionStorage.setItem("sfx_admin",token)}catch(e){}
-      $("login").hidden=true;$("panel").hidden=false;draw();
+      $("login").hidden=true;$("panel").hidden=false;$("details").hidden=true;draw();
     }).catch(function(e){$("msg").textContent=e.message;$("panel").hidden=true;$("login").hidden=false});
   }
   function draw(){
     var s=data.summary,cards=$("cards");cards.textContent="";
-    [["Paid",s.paid],["Pending",s.pending],["Teams",s.team],["Solo",s.solo],["Revenue","₹"+s.revenue.toLocaleString("en-IN")]].forEach(function(c){
+    [["Total registrations",s.total],["Solo",s.solo],["Teams",s.team],["Paid registrations",s.paid],["Pending",s.pending],["Failed payments",s.failed],["Collected revenue","₹"+Number(s.revenue||0).toLocaleString("en-IN")]].forEach(function(c){
       var d=document.createElement("div");d.className="card";
       var b=document.createElement("b");b.textContent=c[1];
       var sp=document.createElement("span");sp.textContent=c[0];
@@ -90,33 +121,70 @@ th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute
     var q=$("search").value.toLowerCase(),fs=$("fstatus").value,fp=$("fplan").value,ft=$("ftrack").value;
     var tb=$("rows");tb.textContent="";
     data.rows.filter(function(r){
-      if(fs==="paid"&&r.status!=="paid")return false;
+      if(fs!=="all"&&r.paymentStatus!==fs)return false;
       if(fp&&r.plan!==fp)return false;
       if(ft&&r.track!==ft)return false;
       if(!q)return true;
-      return [r.code,r.teamName,r.leaderName,r.email,r.phone,r.college].join(" ").toLowerCase().indexOf(q)>-1;
+      return [r.registrationId,r.code,r.teamName,r.leaderName,r.email,r.phone,r.college,r.paymentId].join(" ").toLowerCase().indexOf(q)>-1;
     }).forEach(function(r){
       var tr=document.createElement("tr");
-      tr.appendChild(cell(r.code||"-"));
-      var st=document.createElement("td"),p=document.createElement("span");p.className="pill "+r.status;p.textContent=r.status;st.appendChild(p);tr.appendChild(st);
-      tr.appendChild(cell(r.plan));tr.appendChild(cell(r.track));
+      tr.appendChild(cell(r.registrationId));
+      tr.appendChild(cell(r.plan==="team"?"Team":"Solo"));
       tr.appendChild(cell((r.teamName?r.teamName+" / ":"")+r.leaderName));
-      tr.appendChild(cell(r.email+" · "+r.phone));
-      tr.appendChild(cell(r.college));
-      tr.appendChild(cell(r.members.join(", ")));
-      tr.appendChild(cell(r.paidAt||""));
+      tr.appendChild(cell(r.email));
+      tr.appendChild(cell(r.phone));
+      tr.appendChild(cell(r.createdAt||""));
+      tr.appendChild(cell(money(Math.round(Number(r.amount||0)*100))));
+      var st=document.createElement("td"),p=document.createElement("span");p.className="pill "+r.paymentStatus;p.textContent=r.paymentStatus;st.appendChild(p);tr.appendChild(st);
+      tr.appendChild(cell(r.paymentId||"-"));
+      var action=document.createElement("td"),button=document.createElement("button");
+      button.type="button";button.className="ghost";button.textContent="View details";
+      button.addEventListener("click",function(){showDetails(r.registrationId)});
+      action.appendChild(button);tr.appendChild(action);
       tb.appendChild(tr);
     });
+  }
+  function showDetails(id){
+    var box=$("details");
+    box.hidden=false;box.textContent="Loading registration details...";
+    api("/api/admin/registrations/"+encodeURIComponent(id)).then(function(r){
+      if(r.status===401)throw new Error("Admin session expired. Enter the token again.");
+      if(!r.ok)throw new Error("Could not load registration details.");
+      return r.json();
+    }).then(function(result){
+      box.textContent="";
+      var r=result.registration;
+      text(box,"h2","Registration "+r.registrationId);
+      var dl=text(box,"dl","");
+      [["Type",r.plan==="team"?"Team":"Solo"],["Registration status",r.status],["Track",r.track],["Team name",r.teamName],["Leader",r.leaderName],["Email",r.email],["Phone",r.phone],["College",r.college],["Registered",r.createdAt],["Payment status",r.paymentStatus],["Payment verification",r.verificationStatus],["Amount",money(Math.round(Number(r.amount||0)*100))],["Razorpay order ID",r.orderId],["Razorpay payment ID",r.paymentId],["Payment timestamp",r.paymentAt],["Failure reason",r.failureReason],["Refunded amount",money(Math.round(Number(r.refundAmount||0)*100))],["Refund ID",r.refundId],["Refund timestamp",r.refundedAt]].forEach(function(item){
+        text(dl,"dt",item[0]);text(dl,"dd",item[1]||"-");
+      });
+      text(box,"h3","Team members");
+      if(!result.teamMembers.length)text(box,"p",r.plan==="team"?"No additional member rows were recorded.":"Solo registration — no team members.");
+      result.teamMembers.forEach(function(member,index){
+        text(box,"p",(index+1)+". "+member.full_name+(member.email?" · "+member.email:"")+(member.phone?" · "+member.phone:"")+(member.college?" · "+member.college:""));
+      });
+      text(box,"h3","Payment attempts");
+      if(!result.payments.length)text(box,"p","No payment attempt has been recorded.");
+      result.payments.forEach(function(payment){
+        var p=document.createElement("p");
+        p.textContent=[payment.status,money(payment.amount_paise),payment.currency,"payment "+(payment.payment_id||"-"),"order "+(payment.order_id||"-"),"verification "+payment.verification_status,payment.paid_at||payment.created_at,payment.failure_reason||""].filter(Boolean).join(" · ");
+        box.appendChild(p);
+        (payment.refunds||[]).forEach(function(refund){
+          text(box,"p","Refund "+refund.refund_id+" · "+money(refund.amount_paise)+" "+refund.currency+" · "+refund.created_at);
+        });
+      });
+    }).catch(function(e){box.textContent=e.message});
   }
   $("login").addEventListener("submit",function(e){e.preventDefault();token=$("token").value.trim();load()});
   ["search","fstatus","fplan","ftrack"].forEach(function(id){$(id).addEventListener("input",function(){if(data)draw()})});
   $("refresh").addEventListener("click",load);
   $("csv").addEventListener("click",function(){
     var all=$("fstatus").value==="all";
-    api("/api/admin/export.csv"+(all?"?paid=0":"")).then(function(r){return r.blob()}).then(function(b){
+    api("/api/admin/export.csv"+(all?"?paid=0":"")).then(function(r){if(!r.ok)throw new Error(r.status===401?"Wrong token.":"Export failed.");return r.blob()}).then(function(b){
       var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="scalefox-hack-registrations.csv";
       document.body.appendChild(a);a.click();a.remove();
-    });
+    }).catch(function(e){$("msg").textContent=e.message});
   });
   if(token)load();
 })();
