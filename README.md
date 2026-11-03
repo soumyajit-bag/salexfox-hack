@@ -47,10 +47,24 @@ The schema has `registrations` as the parent record, `team_members` linked by `r
 
 ## Vercel deployment
 
-1. Set the Vercel project Root Directory to `scalefox-hack` if the Git repository root is its parent folder.
-2. Add the Production environment variables above. Select Razorpay test credentials first and set `PAYMENT_MODE=razorpay`.
-3. Run the migrations using the direct Neon URL before promoting the application.
-4. Deploy the project to Vercel. `api/[...path].js` routes API requests to the existing Express app; static pages continue to be served from `public/`.
+The Vercel project is `vengence5/salexfox-hack`, connected to this repository's `main` branch. Its current deployment settings are:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | `.` (the repository root) |
+| Framework Preset | Express |
+| Node.js Version | `26.x` |
+| Install Command | Automatic package-manager detection (`npm install` from `package-lock.json`) |
+| Build Command | None |
+| Output Directory | None |
+| Deployment Protection | Vercel Authentication enabled |
+
+These settings are stored in the Vercel project. Keep the Root Directory at `.` when deploying this repository; do not set it to `scalefox-hack`, which would point to a nonexistent nested app directory. The Vercel CLI link in `.vercel/` is local and ignored by Git, so a new checkout should link to the existing `vengence5/salexfox-hack` project before deploying. Do not create a replacement project or change the framework, Node.js version, build, or output settings for routine code updates.
+
+1. Configure the Production environment variables above. Select Razorpay test credentials first and set `PAYMENT_MODE=razorpay`. Production currently has the Neon connection, admin token, and payment mode; online registration remains disabled until `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET` are added.
+2. Run the migrations using the direct Neon URL before promoting the application.
+3. Push changes to `main` for the connected Vercel deployment, or run `vercel --prod` from this repository root to deploy manually. Existing Vercel project settings and environment variables are reused.
+4. `api/[...path].js` routes API requests to the existing Express app; static pages continue to be served from `public/`.
 5. In Razorpay Dashboard, add a webhook at `https://YOUR-DOMAIN/api/webhook/razorpay`, use the same value as `RAZORPAY_WEBHOOK_SECRET`, and enable `payment.captured`, `payment.failed`, `order.paid`, and `refund.processed`.
 6. Make a Razorpay test payment and verify the registration, payment status, and admin dashboard before switching to live credentials.
 
