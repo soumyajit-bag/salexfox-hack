@@ -42,18 +42,20 @@ if (!DATABASE_URL) {
 }
 
 let razorpay = null;
+const missingPaymentConfig = MODE === "razorpay"
+  ? ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET"].filter((key) => !process.env[key])
+  : [];
+const PAYMENT_CONFIGURED = MODE === "mock" || missingPaymentConfig.length === 0;
 if (MODE === "razorpay") {
-  const need = ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET"];
-  const missing = need.filter((k) => !process.env[k]);
-  if (missing.length) {
-    console.error("Missing in .env: " + missing.join(", "));
-    process.exit(1);
+  if (missingPaymentConfig.length) {
+    console.error("Payments are unavailable; missing required environment variables: " + missingPaymentConfig.join(", "));
+  } else {
+    const Razorpay = require("razorpay");
+    razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
   }
-  const Razorpay = require("razorpay");
-  razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-  });
 } else {
   console.warn("PAYMENT_MODE=mock: payments are simulated. Do not use this for real registrations.");
 }
@@ -580,6 +582,9 @@ app.post(
   express.raw({ type: "*/*", limit: "1mb" }),
   asyncRoute(async (req, res) => {
     if (MODE !== "razorpay") return res.sendStatus(404);
+    if (!PAYMENT_CONFIGURED) {
+      return res.status(503).json({ error: "Razorpay payments are not configured." });
+    }
     const signature = req.get("X-Razorpay-Signature") || "";
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
     const expected = crypto
@@ -745,6 +750,7 @@ function validate(body) {
 app.get("/api/config", (req, res) => {
   res.json({
     mode: MODE,
+    paymentsAvailable: PAYMENT_CONFIGURED,
     keyId: MODE === "razorpay" ? process.env.RAZORPAY_KEY_ID : null,
     plans: { team: PLANS.team.amountPaise, solo: PLANS.solo.amountPaise },
     opensAt: REG_OPEN.toISOString(),
@@ -756,6 +762,9 @@ app.post(
   "/api/register",
   registerLimiter,
   asyncRoute(async (req, res) => {
+    if (!PAYMENT_CONFIGURED) {
+      return res.status(503).json({ error: "Online registration is temporarily unavailable while payments are being configured." });
+    }
     const now = new Date();
     if (now < REG_OPEN) return res.status(403).json({ error: "Registration has not opened yet." });
     if (now > REG_CLOSE) return res.status(403).json({ error: "Registration is closed." });
@@ -832,6 +841,9 @@ app.post(
   "/api/verify",
   verifyLimiter,
   asyncRoute(async (req, res) => {
+    if (!PAYMENT_CONFIGURED) {
+      return res.status(503).json({ error: "Razorpay payments are not configured." });
+    }
     const body = req.body || {};
     const orderId = clean(body.razorpay_order_id, 80);
     const paymentId = clean(body.razorpay_payment_id, 80);
@@ -920,7 +932,16 @@ app.get(
   ["/healthz", "/api/healthz"],
   asyncRoute(async (req, res) => {
     await pool.query("SELECT 1");
-    res.json({ ok: true, mode: MODE, db: "connected" });
+    if (!PAYMENT_CONFIGURED) {
+      return res.status(503).json({
+        ok: false,
+        mode: MODE,
+        db: "connected",
+        payments: "not_configured",
+        missingPaymentConfig,
+      });
+    }
+    res.json({ ok: true, mode: MODE, db: "connected", payments: "configured" });
   })
 );
 

@@ -664,6 +664,10 @@
         var closesAt = Date.parse(cfg.closesAt);
         if (!Number.isFinite(closesAt)) throw new Error("The event closing date is invalid.");
         target = closesAt;
+        if (cfg.paymentsAvailable === false) {
+          btn.disabled = true;
+          say("Online registration is temporarily unavailable while payments are being configured.", "err");
+        }
         if (cfg.plans && Number.isFinite(cfg.plans.team) && Number.isFinite(cfg.plans.solo)) {
           PRICE.team = cfg.plans.team / 100;
           PRICE.solo = cfg.plans.solo / 100;

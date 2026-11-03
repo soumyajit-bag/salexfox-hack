@@ -64,6 +64,7 @@ The Node.js process reuses a small `pg` connection pool, attaches it to Vercel's
 - The checkout signature is checked on the server, then the payment is fetched from Razorpay and matched against the stored order, amount, and currency. Webhook HMAC signatures, order ownership, amount, and currency are also checked.
 - Razorpay event IDs and payment IDs are unique in the database, and updates run in transactions to make repeated callbacks and webhook deliveries safe.
 - Mock checkout is only for local development and is rejected at production startup.
+- If Razorpay credentials are missing in production, the landing page remains available, but registration and payment endpoints return an explicit unavailable response and the health endpoint reports the missing configuration. Add the Razorpay credentials before accepting registrations.
 
 ## Admin and endpoints
 

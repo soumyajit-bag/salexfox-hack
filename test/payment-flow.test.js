@@ -787,6 +787,28 @@ test("refuses production startup with mock payment mode", () => {
   assert.match(child.stderr, /PAYMENT_MODE=mock is forbidden in production/);
 });
 
+test("keeps the production app available when Razorpay is not configured", () => {
+  const env = {
+    ...process.env,
+    NODE_ENV: "production",
+    PAYMENT_MODE: "razorpay",
+    DATABASE_URL: "postgres://test.invalid/test",
+    ADMIN_TOKEN: "test-admin-token-value",
+  };
+  delete env.RAZORPAY_KEY_ID;
+  delete env.RAZORPAY_KEY_SECRET;
+  delete env.RAZORPAY_WEBHOOK_SECRET;
+
+  const child = spawnSync(process.execPath, ["-e", 'require("./server")'], {
+    cwd: projectRoot,
+    encoding: "utf8",
+    env,
+  });
+  assert.equal(child.status, 0, child.stderr);
+  assert.match(child.stderr, /Payments are unavailable/);
+  assert.match(child.stderr, /RAZORPAY_KEY_ID/);
+});
+
 test("retains a registration when Razorpay order creation fails", async () => {
   FakeRazorpay.instance.orders.create = async () => {
     throw Object.assign(new Error("gateway unavailable"), { statusCode: 503 });
