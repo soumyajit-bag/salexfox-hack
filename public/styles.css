@@ -188,9 +188,23 @@
       align-items: center;
       color: var(--paper);
       text-decoration: none;
-      max-width: 280px;
-      font: 720 23px/1.35 var(--mono);
-      letter-spacing: 1.2px
+      line-height: 1;
+      padding-block: 4px;
+    }
+
+    .brand-logo {
+      display: block;
+      height: 28px;
+      width: auto;
+      max-width: 250px;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+
+    nav .brand:hover .brand-logo {
+      opacity: .92;
+      transform: translateY(-1px) scale(1.02);
     }
 
     nav ul {
@@ -489,6 +503,11 @@
     }
 
     @media(max-width:540px) {
+      .brand-logo {
+        height: 22px;
+        max-width: 190px;
+      }
+
       .strip {
         max-width: none;
         grid-template-columns: 1.35fr 1fr;
@@ -2617,4 +2636,5 @@
 .extracted-inline-style-29 { margin-top:22px;color:#ffd6d9 }
 .extracted-inline-style-30 { color:#b9b7c3;font-size:15px;max-width:30ch }
 
-.footer-brand { margin-bottom: 16px; font: 900 22px/1 var(--display); letter-spacing: -.03em; }
+.footer-brand { display: inline-block; margin-bottom: 16px; font: 900 22px/1 var(--display); letter-spacing: -.03em; text-decoration: none; }
+.footer-brand-logo { display: block; height: 32px; width: auto; max-width: 260px; object-fit: contain; }

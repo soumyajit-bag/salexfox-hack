@@ -282,3 +282,4 @@
     animationFrameId = requestAnimationFrame(animate);
   }
 })();
+
