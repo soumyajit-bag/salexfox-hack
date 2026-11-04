@@ -271,6 +271,38 @@
       letter-spacing: -.025em
     }
 
+    .hero h1.hero-tagline.hero-logo {
+      width: min(100%, 1160px);
+      max-width: none;
+      aspect-ratio: 9 / 1;
+      margin: 0 0 clamp(10px, 1.5vw, 18px);
+      overflow: hidden;
+      line-height: 0
+    }
+
+    .hero-logo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: drop-shadow(0 0 24px rgba(238, 22, 35, .18))
+    }
+
+    .hero-slogan {
+      max-width: 1000px;
+      margin: 0 0 clamp(22px, 3vw, 36px);
+      font-size: clamp(18px, 2.2vw, 28px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -.025em
+    }
+
+    .slogan-hired {
+      color: var(--red);
+      animation: hired-blink 1.2s ease-in-out infinite
+    }
+
     .hero h1.hero-tagline .hero-highlight {
       color: var(--red-soft)
     }
@@ -819,13 +851,21 @@
       margin: 22px 0 26px
     }
 
-    .tags span {
+    .tags>span {
+      position: relative;
+      overflow: hidden;
       font: 800 15px var(--display);
       font-stretch: 110%;
       text-transform: uppercase;
       padding: 10px 16px;
       background: var(--ink-3);
       border-left: 3px solid var(--red)
+    }
+
+    .tag-label {
+      display: block;
+      position: relative;
+      z-index: 1
     }
 
     .steps {
@@ -1250,6 +1290,21 @@
       -webkit-text-stroke: 0
     }
 
+    .final-register-btn,
+    .final-register-btn:hover {
+      background: #fff;
+      color: var(--red-deep)
+    }
+
+    .final-register-label {
+      display: inline-block;
+      transition: transform .24s cubic-bezier(.2, .8, .2, 1)
+    }
+
+    .final-register-btn:hover .final-register-label {
+      transform: scale(1.12)
+    }
+
     footer {
       border-top: 1px solid var(--line);
       padding-block: 48px 56px
@@ -1426,12 +1481,17 @@
     }
 
     .hero .wrap>h1 {
-      order: 1
+      order: 1;
+      align-self: center
+    }
+
+    .hero .wrap>.hero-slogan {
+      order: 2
     }
 
     .hero .wrap>.presents {
-      order: 2;
-      margin-top: 22px;
+      order: 3;
+      margin-top: 0;
       margin-bottom: 0
     }
 
@@ -1685,6 +1745,121 @@
         }
       }
 
+      .judging-copy.animate-copy .judging-title-line {
+        display: block;
+        overflow: hidden
+      }
+
+      .judging-copy.animate-copy .judging-title-line>span {
+        display: block;
+        opacity: 0;
+        transform: translateY(105%)
+      }
+
+      .judging-copy.animate-copy.is-visible .judging-title-line>span {
+        animation: judging-line-rise .62s var(--motion-ease) var(--line-delay) both
+      }
+
+      .judging-copy.animate-copy .judging-description {
+        opacity: 0;
+        transform: translateY(20px)
+      }
+
+      .judging-copy.animate-copy.is-visible .judging-description {
+        animation: judging-copy-rise .65s var(--motion-ease) 760ms both
+      }
+
+      @keyframes judging-line-rise {
+        to {
+          opacity: 1;
+          transform: translateY(0)
+        }
+      }
+
+      @keyframes judging-copy-rise {
+        to {
+          opacity: 1;
+          transform: translateY(0)
+        }
+      }
+
+      .tags.animate-tags>span::before {
+        content: "";
+        position: absolute;
+        z-index: 0;
+        inset: 0;
+        background: var(--red);
+        transform: scaleX(0);
+        transform-origin: left center
+      }
+
+      .tags.animate-tags.is-visible>span::before {
+        animation: eligibility-tag-sweep .62s ease-in-out var(--tag-delay) both
+      }
+
+      .tags.animate-tags .tag-label {
+        opacity: 0
+      }
+
+      .tags.animate-tags.is-visible .tag-label {
+        animation: eligibility-tag-label-in .28s ease-out calc(var(--tag-delay) + 540ms) both
+      }
+
+      .process-steps.animate-steps h3,
+      .process-steps.animate-steps p {
+        opacity: 0;
+        transform: translateX(-22px)
+      }
+
+      .process-steps.animate-steps.is-visible h3 {
+        animation: process-step-text-in .5s var(--motion-ease) var(--step-delay) both
+      }
+
+      .process-steps.animate-steps.is-visible p {
+        animation: process-step-text-in .5s var(--motion-ease) calc(var(--step-delay) + 120ms) both
+      }
+
+      @keyframes process-step-text-in {
+        to {
+          opacity: 1;
+          transform: translateX(0)
+        }
+      }
+
+      @keyframes eligibility-tag-sweep {
+        0% {
+          transform: scaleX(0);
+          transform-origin: left center
+        }
+
+        48% {
+          transform: scaleX(1);
+          transform-origin: left center
+        }
+
+        49% {
+          transform: scaleX(1);
+          transform-origin: right center
+        }
+
+        100% {
+          transform: scaleX(0);
+          transform-origin: right center
+        }
+      }
+
+      @keyframes eligibility-tag-label-in {
+        from {
+          opacity: 0;
+          transform: translateX(8px)
+        }
+
+        to {
+          opacity: 1;
+          transform: translateX(0)
+        }
+      }
+
       .tl.animate-phases>li {
         opacity: 0;
         transform: translate3d(0, 24px, 0)
@@ -1922,6 +2097,7 @@
 
       .hero .presents,
       .hero h1,
+      .hero-slogan,
       .hero .tag,
       .hero .lead,
       .hero .opens,
@@ -2279,6 +2455,11 @@
       border-color: rgba(255, 75, 85, .5)
     }
 
+    .process-steps li:hover {
+      border-color: var(--red-soft);
+      box-shadow: 0 0 18px rgba(238, 22, 35, .18)
+    }
+
     .track:hover {
       background: #20202a
     }
@@ -2311,7 +2492,7 @@
       border-color: #fff
     }
 
-    .tags span:hover,
+    .tags>span:hover,
     .rules li:hover {
       transform: translateX(4px);
       background: #24242d
@@ -2320,7 +2501,7 @@
     .bar u s {
       transform: scaleX(0);
       transform-origin: left;
-      transition: transform 1s var(--motion-ease)
+      transition: transform 1.45s cubic-bezier(.16, 1, .3, 1) var(--bar-delay, 0ms)
     }
 
     .bars.is-visible .bar u s {
@@ -2349,7 +2530,7 @@
       .track,
       .pz,
       .pool,
-      .tags span,
+      .tags>span,
       .steps li,
       .rules li,
       .chips span,
@@ -2365,7 +2546,7 @@
       .track:hover,
       .pz:hover,
       .pool:hover,
-      .tags span:hover,
+      .tags>span:hover,
       .rules li:hover,
       .path div:hover {
         transform: none

@@ -44,7 +44,8 @@
     </svg>
     <div class="wrap">
 
-      <h1 class="hero-tagline"><span class="tag-word">Build.</span> <span class="tag-word">Showcase.</span> <span class="tag-word">Compete.</span> <span class="tag-word">Get</span> <span class="tag-word hero-highlight">Hired.</span> <span class="tag-word">Recognized.</span></h1>
+      <h1 class="hero-tagline hero-logo"><img src="build2hire-logo.png" alt="BUILD2HIRE"></h1>
+      <h2 class="hero-slogan">Build. Showcase. Compete. Get <span class="slogan-hired">Hired.</span> Recognized.</h2>
       <div class="presents mono">
         <span>Presented by</span>
         <img src="scalefox-media-logo.png" alt="Scalefox Media">
@@ -258,7 +259,14 @@
           <h2>Students from all backgrounds</h2>
         </div>
         <div class="tags">
-          <span>B.Tech</span><span>B.E.</span><span>BCA</span><span>B.Sc.</span><span>MCA</span><span>M.Sc.</span><span>MBA</span><span>Diploma</span>
+          <span style="--tag-delay:0ms"><span class="tag-label">B.Tech</span></span>
+          <span style="--tag-delay:150ms"><span class="tag-label">B.E.</span></span>
+          <span style="--tag-delay:300ms"><span class="tag-label">BCA</span></span>
+          <span style="--tag-delay:450ms"><span class="tag-label">B.Sc.</span></span>
+          <span style="--tag-delay:600ms"><span class="tag-label">MCA</span></span>
+          <span style="--tag-delay:750ms"><span class="tag-label">M.Sc.</span></span>
+          <span style="--tag-delay:900ms"><span class="tag-label">MBA</span></span>
+          <span style="--tag-delay:1050ms"><span class="tag-label">Diploma</span></span>
         </div>
         <p class="lead">Students from B.Tech, B.E., BCA, B.Sc., MCA, M.Sc., MBA, Diploma and other tech enthusiasts and
           builders are welcome. Participate individually or in a team of 3-4 members.</p>
@@ -275,7 +283,7 @@
           <span class="mono">Process</span>
           <h2>Six steps</h2>
         </div>
-        <ol class="steps extracted-inline-style-22">
+        <ol class="steps process-steps extracted-inline-style-22">
           <li><span class="n">1</span>
             <div>
               <h3>Register</h3>
@@ -320,10 +328,10 @@
   <section id="judging" class="band">
     <div class="wrap two">
       <div>
-        <div class="head extracted-inline-style-20">
+        <div class="head judging-copy extracted-inline-style-20">
           <span class="mono">Judging criteria</span>
-          <h2>How projects are evaluated</h2>
-          <p class="lead">Every project will be evaluated out of 100 marks based on the following criteria:</p>
+          <h2 class="judging-title"><span class="judging-title-line"><span>How</span></span><span class="judging-title-line"><span>projects</span></span><span class="judging-title-line"><span>are</span></span><span class="judging-title-line"><span>evaluated</span></span></h2>
+          <p class="lead judging-description">Every project will be evaluated out of 100 marks based on the following criteria:</p>
         </div>
       </div>
       <div class="bars">
@@ -440,8 +448,8 @@
   <section class="band red final">
     <div class="wrap">
       <h2>Your next big build starts here</h2>
-      <div class="cta"><a class="btn extracted-inline-style-28" href="#register">Register now
-          &nbsp;&#8594;</a></div>
+      <div class="cta"><a class="btn final-register-btn extracted-inline-style-28" href="#register"><span
+            class="final-register-label">Register now</span>&nbsp;&#8594;</a></div>
       <p class="mono extracted-inline-style-29">&#8377;50,000 prize pool &middot; 6-day build sprint
         &middot; internship and placement support</p>
     </div>
@@ -630,6 +638,9 @@
       }
       var judgingBars = document.querySelector(".bars");
       if (judgingBars && !motionQuery.matches && "IntersectionObserver" in window) {
+        Array.from(judgingBars.querySelectorAll(".bar")).forEach(function (bar, index) {
+          bar.querySelector("s").style.setProperty("--bar-delay", index * 110 + "ms");
+        });
         var judgingBarsObserver = new IntersectionObserver(function (entries, observer) {
           if (entries.some(function (entry) { return entry.isIntersecting })) {
             judgingBars.classList.add("is-visible");
@@ -637,6 +648,45 @@
           }
         }, { threshold: .25 });
         judgingBarsObserver.observe(judgingBars);
+      }
+      var judgingCopy = document.querySelector(".judging-copy");
+      if (judgingCopy && !motionQuery.matches && "IntersectionObserver" in window) {
+        Array.from(judgingCopy.querySelectorAll(".judging-title-line")).forEach(function (line, index) {
+          line.style.setProperty("--line-delay", index * 140 + "ms");
+        });
+        judgingCopy.classList.add("animate-copy");
+        var judgingCopyObserver = new IntersectionObserver(function (entries, observer) {
+          if (entries.some(function (entry) { return entry.isIntersecting })) {
+            judgingCopy.classList.add("is-visible");
+            observer.disconnect();
+          }
+        }, { threshold: .25 });
+        judgingCopyObserver.observe(judgingCopy);
+      }
+      var eligibilityTags = document.querySelector("#eligibility .tags");
+      if (eligibilityTags && !motionQuery.matches && "IntersectionObserver" in window) {
+        eligibilityTags.classList.add("animate-tags");
+        var eligibilityTagsObserver = new IntersectionObserver(function (entries, observer) {
+          if (entries.some(function (entry) { return entry.isIntersecting })) {
+            eligibilityTags.classList.add("is-visible");
+            observer.disconnect();
+          }
+        }, { threshold: .25 });
+        eligibilityTagsObserver.observe(eligibilityTags);
+      }
+      var processSteps = document.querySelector("#eligibility .process-steps");
+      if (processSteps && !motionQuery.matches && "IntersectionObserver" in window) {
+        Array.from(processSteps.children).forEach(function (step, index) {
+          step.style.setProperty("--step-delay", index * 180 + "ms");
+        });
+        processSteps.classList.add("animate-steps");
+        var processStepsObserver = new IntersectionObserver(function (entries, observer) {
+          if (entries.some(function (entry) { return entry.isIntersecting })) {
+            processSteps.classList.add("is-visible");
+            observer.disconnect();
+          }
+        }, { threshold: .2 });
+        processStepsObserver.observe(processSteps);
       }
       function pad(n) { return String(n).padStart(2, "0") }
       function setCountdown(id, value) {
